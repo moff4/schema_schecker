@@ -18,5 +18,5 @@ def decorator_constructor(getter: Callable, setter: Callable):
 # ignores positional args
 kw_validator = decorator_constructor(
     getter=lambda *a, **b: b,
-    setter=lambda data, *a, **b: ((), data),
+    setter=lambda data, *a, **b: (a, data),
 )

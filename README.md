@@ -2,6 +2,10 @@
 
 Another schema validator :)
 
+[![Build Status](https://travis-ci.org/moff4/schema_schecker.svg?branch=master)](https://travis-ci.org/moff4/schema_schecker)
+[![CodeFactor](https://www.codefactor.io/repository/github/moff4/schema_schecker/badge)](https://www.codefactor.io/repository/github/moff4/schema_schecker)
+
+
 Features:
 * Can validate any dict object (not only json)
 * Very customizeble
@@ -38,11 +42,35 @@ schema ::= dict - {
 }
 ```
 
+#### Extras
+
+##### decorator_constructor
+
+`def decorator_constructor(getter, setter)`
+
+`getter` must:
+ - take same args as the function that'll be decorated
+ - return dict for the schema validator
+ 
+`setter` must:
+ - take 3 args: validated dict, source positional args as tuple, sourse keyword args as dict
+ - return tuple and dict for positional and keywords args for the function tha'll be decorated
+
+returns parameterized decorator, that expects schema
+
+##### kw_validator
+
+`def kw_validator(schema)`
+
+Validate only keyword args and ignores all positional 
+This decorator is the result of decorator_constructor
+
+
 ## Examples
 
 ```python
 from datetime import datetime, timedelta
-from schema_checker import validate
+from schema_checker import validate, kw_validator
 
 validate(
     obj='12345',
@@ -76,5 +104,15 @@ validate(
         'filter': lambda x: (datetime.today() - timedelta(year=1)) <= x <= datetime.today(),  
     },
 )  # result: datetime.datetime(2019, 12, 10, 0, 0)
+
+
+@kw_validator({'type': dict, 'values': {'a': str}})
+def func(a):
+    return a
+
+func(123)  # ok
+func('123')  # ok
+func(a='123')  # ok
+func(a=123)  # raise ValueError
 
 ```
