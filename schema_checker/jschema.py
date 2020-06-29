@@ -50,7 +50,8 @@ def _apply(obj: ObjType, schema: SchemaType, key: str) -> ObjType:
     if 'pre_call' in schema:
         obj = schema['pre_call'](obj)
 
-    if (schema_type := get_type(schema)) == 'const':
+    schema_type = get_type(schema)
+    if schema_type == 'const':
         if obj not in schema['value']:
             raise ValueError(f'"{obj}" is not allowed as "{key}"')
     elif not isinstance(schema_type, type):
@@ -73,7 +74,8 @@ def _apply(obj: ObjType, schema: SchemaType, key: str) -> ObjType:
         elif issubclass(schema_type, dict):
             if 'value' in schema:
                 new_obj = {}
-                if unex := {i for i in obj if i not in schema['value']}:
+                unex = {i for i in obj if i not in schema['value']}
+                if unex:
                     if schema.get('unexpected', False):
                         new_obj.update(
                             {
@@ -83,8 +85,9 @@ def _apply(obj: ObjType, schema: SchemaType, key: str) -> ObjType:
                         )
                     else:
                         raise ValueError(f'''Got unexpected keys: "{'", "'.join([str(i) for i in unex])}" {extra};''')
-                if missed := {i for i in schema['value'] if i not in obj and 'default' not in schema['value'][i]}:
-                    raise ValueError(f'''expected keys "{'", "'.join([str(i) for i in missed])}" {extra}''')
+                missed = {i for i in schema['value'] if i not in obj and 'default' not in schema['value'][i]}
+                if missed:
+                        raise ValueError(f'''expected keys "{'", "'.join([str(i) for i in missed])}" {extra}''')
 
                 new_obj.update(
                     {

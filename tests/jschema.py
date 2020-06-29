@@ -298,7 +298,7 @@ class TestJschema(unittest.TestCase):
     def test_anykey_error(self):
         schema = {
             'type': dict,
-            'anykey': {
+            'any_key': {
                 'type': int,
             },
             'unexpected': True,

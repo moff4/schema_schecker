@@ -6,10 +6,10 @@ with open('README.md', 'r', encoding='utf-8') as fh:
 
 setuptools.setup(
     name='schema_checker',
-    version='0.9',
+    version='1.0',
     author='Komissarov Andrey',
     author_email='Komissar.off.andrey@gmail.com',
-    description='Another JSON schema validator :)',
+    description='Another schema validator :)',
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/moff4/jschema',
