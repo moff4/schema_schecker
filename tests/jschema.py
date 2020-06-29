@@ -6,14 +6,16 @@ from schema_checker import validate
 
 class TestJschema(unittest.TestCase):
 
-    def do_test(self, obj, schema, result, expect=True):
+    def do_test(self, obj, schema, result, expect=True, msg=None):
         try:
             if expect:
                 self.assertEqual(validate(obj, schema), result)
             else:
                 self.assertNotEqual(validate(obj, schema), result)
-        except ValueError:
+        except ValueError as e:
             self.assertFalse(expect)
+            if msg:
+                self.assertEqual(str(e), msg)
 
     def test_simple_const(self):
         obj = '123'
@@ -309,3 +311,28 @@ class TestJschema(unittest.TestCase):
         }
         self.do_test(obj, schema, obj, False)
 
+    def test_type_union(self):
+        schema = {
+            'type': dict,
+            'value': {
+                'a': (int, float),
+                'b': (str, bytes),
+            }
+        }
+        obj = {'a': 1, 'b': '123'}
+        self.do_test(obj, schema, obj)
+        obj = {'a': 1.0, 'b': '123'}
+        self.do_test(obj, schema, obj)
+        obj = {'a': 1, 'b': b'123'}
+        self.do_test(obj, schema, obj)
+        obj = {'a': 1.0, 'b': b'123'}
+        self.do_test(obj, schema, obj)
+
+    def test_msg(self):
+        schema = {
+            'type': dict,
+            'any_key': int,
+            'errmsg': 'here must be int',
+        }
+        obj = {'123': 'not int'}
+        self.do_test(obj, schema, obj, False, 'here must be int')

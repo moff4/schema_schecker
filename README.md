@@ -22,7 +22,7 @@ where
 obj - some object
 schema - json_validator
 key is name of top-level object (or None) ; (for log)
-schema ::= type of this object : list/dict/str/int/float or "const"
+schema ::= type of this object : list/dict/str/int/float (can be tuple of types) or "const"
   OR
 schema ::= dict - {
   type         : type of this object : "list/dict/str/int/float or "const"
@@ -39,6 +39,7 @@ schema ::= dict - {
   "max_length" : extra check of length (len)
   "min_length" : extra check of length (len)
   "unexpected" : allow unexpected keys (for dict)
+  "errmsg"     : will be in ValueError in case of error on this level
 }
 ```
 
