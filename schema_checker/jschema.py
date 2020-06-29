@@ -37,7 +37,7 @@ def _apply(obj: ObjType, schema: SchemaType, key: str) -> ObjType:
 
     extra = ''.join(['for ', key]) if key else ''
     if not isinstance(schema, (dict, type)) and schema != 'const':
-        raise ValueError(f'schema must be type, dict or "const" {extra}')
+        raise ValueError('schema must be type, dict or "const" {}'.format(extra))
 
     if schema == 'const':
         return obj
@@ -45,7 +45,7 @@ def _apply(obj: ObjType, schema: SchemaType, key: str) -> ObjType:
     if isinstance(schema, type):
         if isinstance(obj, schema):
             return obj
-        raise ValueError(f'"{obj}" is not type of "{schema}" {extra}')
+        raise ValueError('"{}" is not type of "{}" {}'.format(obj, schema, extra))
 
     if 'pre_call' in schema:
         obj = schema['pre_call'](obj)
@@ -53,20 +53,26 @@ def _apply(obj: ObjType, schema: SchemaType, key: str) -> ObjType:
     schema_type = get_type(schema)
     if schema_type == 'const':
         if obj not in schema['value']:
-            raise ValueError(f'"{obj}" is not allowed as "{key}"')
+            raise ValueError('"{}" is not allowed as "{}"'.format(obj, key))
     elif not isinstance(schema_type, type):
-        raise ValueError(f'''schema has unknown type "{schema_type}"''')
+        raise ValueError('schema has unknown type "{}"'.format(schema_type))
     else:
         if not isinstance(obj, schema_type):
-            raise ValueError(f'''expected type "{schema_type}" {extra} ; got {type(obj)}''')
+            raise ValueError(
+                'expected type "{}" {} ; got {}'.format(
+                    schema_type,
+                    extra,
+                    type(obj),
+                ),
+            )
         if 'filter' in schema and not schema['filter'](obj):
-            raise ValueError(f'"{key}" not passed filter')
+            raise ValueError('"{}" not passed filter'.format(key))
         if schema.get('blank') is False and not obj:
-            raise ValueError(f'"{key}" is blank')
+            raise ValueError('"{}" is blank'.format(key))
         if 'max_length' in schema and len(obj) > schema['max_length']:
-            raise ValueError(f'"{key}" > max_length')
+            raise ValueError('"{}" > max_length'.format(key))
         if 'min_length' in schema and len(obj) < schema['min_length']:
-            raise ValueError(f'"{key}" < min_length')
+            raise ValueError('"{}" < min_length'.format(key))
 
         if issubclass(schema_type, list):
             if 'value' in schema:
@@ -84,10 +90,15 @@ def _apply(obj: ObjType, schema: SchemaType, key: str) -> ObjType:
                             }
                         )
                     else:
-                        raise ValueError(f'''Got unexpected keys: "{'", "'.join([str(i) for i in unex])}" {extra};''')
+                        raise ValueError(
+                            'Got unexpected keys: "{}" {};'.format(
+                                '", "'.join([str(i) for i in unex]),
+                                extra,
+                            ),
+                        )
                 missed = {i for i in schema['value'] if i not in obj and 'default' not in schema['value'][i]}
                 if missed:
-                        raise ValueError(f'''expected keys "{'", "'.join([str(i) for i in missed])}" {extra}''')
+                        raise ValueError('expected keys "{}" {}'.format('", "'.join([str(i) for i in missed]), extra))
 
                 new_obj.update(
                     {
