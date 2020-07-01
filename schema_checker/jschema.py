@@ -30,17 +30,10 @@ def _validate_const_enum(obj: ObjType, schema: Dict[str, Any], schema_type: str,
     return obj
 
 
-def _validate_dicts_value(obj: ObjType, schema: Dict[str, Any], extra: str) -> ObjType:
-    new_obj = {}
+def _check_dict_key(obj: ObjType, schema: Dict[str, Any], extra: str) -> ObjType:
     unex = {i for i in obj if i not in schema['value']}
     if unex and not schema.get('unexpected', False):
         _on_error(schema, 'Got unexpected keys: "{}" {};'.format('", "'.join([str(i) for i in unex]), extra))
-    new_obj.update(
-        {
-            i: obj[i]
-            for i in unex
-        }
-    )
     missed = {
         i
         for i in schema['value']
@@ -48,7 +41,14 @@ def _validate_dicts_value(obj: ObjType, schema: Dict[str, Any], extra: str) -> O
     }
     if missed:
         _on_error(schema, 'expected keys "{}" {}'.format('", "'.join([str(i) for i in missed]), extra))
+    return {
+        i: obj[i]
+        for i in unex
+    }
 
+
+def _validate_dicts_value(obj: ObjType, schema: Dict[str, Any], extra: str) -> ObjType:
+    new_obj = _check_dict_key(obj=obj, schema=schema, extra=extra)
     try:
         new_obj.update(
             {
@@ -76,30 +76,37 @@ def _validate_dict(obj: ObjType, schema: Dict[str, Any], extra: str) -> ObjType:
     return obj
 
 
+def _generic_checks(obj: ObjType, schema: SchemaType, schema_type: Type, extra: str, key: str) -> ObjType:
+    if not isinstance(obj, schema_type):
+        _on_error(schema, 'expected type "{}" {} ; got {}'.format(schema_type, extra, type(obj)))
+    if 'filter' in schema and not schema['filter'](obj):
+        _on_error(schema, '"{}" not passed filter'.format(key))
+    if schema.get('blank') is False and not obj:
+        _on_error(schema, '"{}" is blank'.format(key))
+    if 'max_length' in schema and len(obj) > schema['max_length']:
+        _on_error(schema, '"{}" > max_length'.format(key))
+    if 'min_length' in schema and len(obj) < schema['min_length']:
+        _on_error(schema, '"{}" < min_length'.format(key))
+    return obj
+
+
+def _validate_generic(obj: ObjType, schema: SchemaType, schema_type: Type, key: str, extra: str) -> ObjType:
+    obj = _generic_checks(obj=obj, schema=schema, schema_type=schema_type, key=key, extra=extra)
+    if issubclass(schema_type, (list, tuple)) and 'value' in schema:
+        try:
+            obj = schema_type(_apply(i, schema['value'], key=key) for i in obj)
+        except ValueError as ex:
+            _on_error(schema, ex)
+    elif issubclass(schema_type, dict):
+        obj = _validate_dict(obj=obj, schema=schema, extra=extra)
+    return obj
+
+
 def _validate(obj: ObjType, schema: SchemaType, key: str, extra: str) -> ObjType:
     schema_type = _get_type(schema)
     if schema_type in {'const', 'enum'}:
-        obj = _validate_const_enum(obj=obj, schema=schema, schema_type=schema_type, key=key)
-    else:
-        if not isinstance(obj, schema_type):
-            _on_error(schema, 'expected type "{}" {} ; got {}'.format(schema_type, extra, type(obj)))
-        if 'filter' in schema and not schema['filter'](obj):
-            _on_error(schema, '"{}" not passed filter'.format(key))
-        if schema.get('blank') is False and not obj:
-            _on_error(schema, '"{}" is blank'.format(key))
-        if 'max_length' in schema and len(obj) > schema['max_length']:
-            _on_error(schema, '"{}" > max_length'.format(key))
-        if 'min_length' in schema and len(obj) < schema['min_length']:
-            _on_error(schema, '"{}" < min_length'.format(key))
-
-        if issubclass(schema_type, (list, tuple)) and 'value' in schema:
-            try:
-                obj = schema_type(_apply(i, schema['value'], key=key) for i in obj)
-            except ValueError as ex:
-                _on_error(schema, ex)
-        elif issubclass(schema_type, dict):
-            obj = _validate_dict(obj=obj, schema=schema, extra=extra)
-    return obj
+        return _validate_const_enum(obj=obj, schema=schema, schema_type=schema_type, key=key)
+    return _validate_generic(obj=obj, schema=schema, schema_type=schema_type, extra=extra, key=key)
 
 
 def _apply(obj: ObjType, schema: SchemaType, key: str) -> ObjType:
