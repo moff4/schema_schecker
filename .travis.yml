@@ -8,5 +8,5 @@ python:
 os:
   - linux
   # - windows  # not yet supported by CI
-  - osx
+  # - osx  # not yet supported by CI
 script: python -m unittest -v tests
