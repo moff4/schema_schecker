@@ -4,7 +4,7 @@ Another schema validator :)
 
 [![Build Status](https://travis-ci.org/moff4/schema_schecker.svg?branch=master)](https://travis-ci.org/moff4/schema_schecker)
 [![CodeFactor](https://www.codefactor.io/repository/github/moff4/schema_schecker/badge)](https://www.codefactor.io/repository/github/moff4/schema_schecker)
-
+[![codecov](https://codecov.io/gh/moff4/schema_schecker/branch/master/graph/badge.svg)](https://codecov.io/gh/moff4/schema_schecker)
 
 Features:
 * Can validate any dict object (not only json)

@@ -1,8 +1,10 @@
 
-from typing import Callable, Dict, Any
+from typing import Callable, Dict, Any, Type, Union
 import functools
 
 from .jschema import validate
+
+SchemaType = Dict[str, Any]
 
 
 def decorator_constructor(getter: Callable, setter: Callable):
@@ -20,18 +22,18 @@ def decorator_constructor(getter: Callable, setter: Callable):
 # ignores positional args
 kw_validator = decorator_constructor(
     getter=lambda *a, **b: b,
-    setter=lambda data, *a, **b: (a, data),
+    setter=lambda data, a, b: (a, data),
 )
 
 # ignores kw args
 pos_validator = decorator_constructor(
     getter=lambda *a, **b: a,
-    setter=lambda data, *a, **b: (data, b),
+    setter=lambda data, a, b: (data, b),
 )
 
 
 # validate both pos and kw args
-def args_validator(pos_schema: Dict[str, Any], kw_schema: Dict[str, Any]):
+def args_validator(pos_schema: SchemaType, kw_schema: SchemaType):
     def decorator(func):
         @functools.wraps(func)
         def wrap(*a, **b):

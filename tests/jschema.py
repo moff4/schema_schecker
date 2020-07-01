@@ -17,6 +17,9 @@ class TestJschema(unittest.TestCase):
             if msg:
                 self.assertEqual(str(e), msg)
 
+    def test_schema_fail(self):
+        self.do_test(123, '123', 123, False)
+
     def test_simple_const(self):
         obj = '123'
         self.do_test(obj, 'const', obj)
@@ -88,22 +91,34 @@ class TestJschema(unittest.TestCase):
             {
                 'type': dict,
                 'value': {
-                    '1': {'type': int},
-                    'abc': {'type': str}
-                }
+                    '1': int,
+                    'abc': str,
+                },
             },
             obj,
         )
 
-    def test_simple_list(self):
-        obj = ['1', 2, 'abc', 'cde']
+    def test_dict_fail(self):
+        obj = {}
         self.do_test(
             obj,
             {
-                'type': list,
+                'type': dict,
+                'value': {
+                    '1': {
+                        'type': int,
+                        'default': 2,
+                    },
+                    'abc': str,
+                },
             },
-            obj,
+            {'1': 2},
+            False,
         )
+
+    def test_simple_list(self):
+        obj = ['1', 2, 'abc', 'cde']
+        self.do_test(obj, {'type': list}, obj)
 
     def test_list(self):
         obj = ['1', '2', 'abc', 'cde']
@@ -118,6 +133,44 @@ class TestJschema(unittest.TestCase):
             obj,
         )
 
+    def test_simple_tuple_ok(self):
+        obj = ('1', 2, 'abc', 'cde')
+        self.do_test(obj, {'type': tuple}, obj)
+
+    def test_simple_tuple_fail(self):
+        obj = ['1', 2, 'abc', 'cde']
+        self.do_test(obj, {'type': tuple}, obj, False)
+
+    def test_tuple_ok(self):
+        obj = (1, 2, 123, 42)
+        self.do_test(obj, {'type': tuple, 'value': int}, obj)
+
+    def test_tuple_fail(self):
+        obj = ('1', 2, 'abc', 'cde')
+        self.do_test(obj, {'type': tuple, 'value': int}, obj, False)
+
+    def test_simple_const_ok(self):
+        obj = {'1': 123}
+        schema = {
+            'type': dict,
+            'any_key': {
+                'type': 'const',
+                'value': 123,
+            }
+        }
+        self.do_test(obj, schema, obj)
+
+    def test_simple_const_fail(self):
+        obj = {'1': 123}
+        schema = {
+            'type': dict,
+            'any_key': {
+                'type': 'const',
+                'value': 122,
+            }
+        }
+        self.do_test(obj, schema, obj, False)
+
     def test_const(self):
         obj = {
             '1': '2',
@@ -130,13 +183,13 @@ class TestJschema(unittest.TestCase):
                 'value': {
                     '1': {
                         'type': 'const',
-                        'value': {'1', '2'},
+                        'value': '2',
                     },
                     '2': {
                         'type': 'const',
-                        'value': range(100),
+                        'value': 10,
                     },
-                }
+                },
             },
             obj,
         )
@@ -337,7 +390,7 @@ class TestJschema(unittest.TestCase):
         obj = {'123': 'not int'}
         self.do_test(obj, schema, obj, False, 'here must be int')
 
-    def test_enum(self):
+    def test_simple_enum(self):
         schema = {
             'type': 'enum',
             'value': {'1', '2'},
@@ -348,3 +401,34 @@ class TestJschema(unittest.TestCase):
         self.do_test(obj, schema, obj)
         obj = '3'
         self.do_test(obj, schema, obj, False)
+
+
+    def test_simple_enum_schema_fail(self):
+        schema = {
+            'type': 'enum',
+        }
+        obj = '1'
+        self.do_test(obj, schema, obj, False)
+
+    def test_enum(self):
+        obj = {
+            '1': '2',
+            '2': 10,
+        }
+        self.do_test(
+            obj,
+            {
+                'type': dict,
+                'value': {
+                    '1': {
+                        'type': 'enum',
+                        'value': {'1', '2'},
+                    },
+                    '2': {
+                        'type': 'enum',
+                        'value': range(100),
+                    },
+                }
+            },
+            obj,
+        )

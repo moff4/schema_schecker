@@ -18,8 +18,8 @@ def _apply(obj: ObjType, schema: SchemaType, key: str) -> ObjType:
         raise ValueError(msg)
 
     extra = ''.join(['for ', key]) if key else ''
-    if not isinstance(schema, (dict, type, tuple)) and schema != 'const':
-        raise ValueError('schema must be type, dict, tuple or "const" {}'.format(extra))
+    if not isinstance(schema, (dict, type, tuple)) and schema not in {'const', 'enum'}:
+        raise ValueError('schema must be type, dict, tuple or "const"/"enum" {}'.format(extra))
 
     if schema == 'const':
         return obj
@@ -39,10 +39,8 @@ def _apply(obj: ObjType, schema: SchemaType, key: str) -> ObjType:
         if schema_type == 'enum':
             if obj not in schema['value']:
                 on_error(schema, '"{}" is not in enum "{}"')
-        elif obj not in schema['value']:
+        elif obj != schema['value']:
             on_error(schema, '"{}" is not allowed as "{}"'.format(obj, key))
-    elif not isinstance(schema_type, type):
-        on_error(schema, 'schema has unknown type "{}"'.format(schema_type))
     else:
         if not isinstance(obj, schema_type):
             on_error(schema,
@@ -61,10 +59,10 @@ def _apply(obj: ObjType, schema: SchemaType, key: str) -> ObjType:
         if 'min_length' in schema and len(obj) < schema['min_length']:
             on_error(schema, '"{}" < min_length'.format(key))
 
-        if issubclass(schema_type, list):
+        if issubclass(schema_type, (list, tuple)):
             if 'value' in schema:
                 try:
-                    obj = [_apply(i, schema['value'], key=key) for i in obj]
+                    obj = schema_type(_apply(i, schema['value'], key=key) for i in obj)
                 except ValueError as ex:
                     on_error(schema, ex)
         elif issubclass(schema_type, dict):
@@ -86,7 +84,11 @@ def _apply(obj: ObjType, schema: SchemaType, key: str) -> ObjType:
                                 extra,
                             ),
                         )
-                missed = {i for i in schema['value'] if i not in obj and 'default' not in schema['value'][i]}
+                missed = {
+                    i
+                    for i in schema['value']
+                    if i not in obj and (not isinstance(schema['value'][i], dict) or 'default' not in schema['value'][i])
+                }
                 if missed:
                         on_error(schema, 'expected keys "{}" {}'.format('", "'.join([str(i) for i in missed]), extra))
 
@@ -125,9 +127,9 @@ def validate(obj: ObjType, schema: SchemaType) -> ObjType:
         schema ::= type of this object : list/dict/str/int/float (can be tuple of types) or "const"/"enum"
           OR
         schema ::= dict - {
-          type         : type of this object : "list/dict/str/int/float or "const"
+          type         : type of this object : "list/tuple/dict/str/int/float or "const"
           "value"      : need for obj type of
-                           - list - is schema for all elements in list
+                           - list/tuple - is schema for all elements in list
                            - dict - dict[key -> schema]
                            - const - list or set (or iterable) of allowed values
                            - enum - list/set/dict/tuple to check if obj __contains__ in "value"
