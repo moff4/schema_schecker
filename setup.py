@@ -6,13 +6,13 @@ with open('README.md', 'r', encoding='utf-8') as fh:
 
 setuptools.setup(
     name='schema_checker',
-    version='1.0.1',
+    version='1.0.2',
     author='Komissarov Andrey',
     author_email='Komissar.off.andrey@gmail.com',
     description='Another schema validator :)',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/moff4/jschema',
+    url='https://github.com/moff4/schema_schecker',
     packages=setuptools.find_packages(),
     classifiers=[
         'Programming Language :: Python :: 3',

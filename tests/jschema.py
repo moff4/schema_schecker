@@ -336,3 +336,15 @@ class TestJschema(unittest.TestCase):
         }
         obj = {'123': 'not int'}
         self.do_test(obj, schema, obj, False, 'here must be int')
+
+    def test_enum(self):
+        schema = {
+            'type': 'enum',
+            'value': {'1', '2'},
+        }
+        obj = '1'
+        self.do_test(obj, schema, obj)
+        obj = '2'
+        self.do_test(obj, schema, obj)
+        obj = '3'
+        self.do_test(obj, schema, obj, False)

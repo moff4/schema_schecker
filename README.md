@@ -20,8 +20,8 @@ def validate(obj: dict, schema: dict) -> dict:
 where
 ```
 obj - some object
-schema - json_validator
-schema ::= type of this object : list/dict/str/int/float (can be tuple of types) or "const"
+schema - schema_checker
+schema ::= type of this object : list/dict/str/int/float (can be tuple of types) or "const"/"enum"
   OR
 schema ::= dict - {
   type         : type of this object : "list/dict/str/int/float or "const"
@@ -29,6 +29,7 @@ schema ::= dict - {
                    - list - is schema for all elements in list
                    - dict - dict[key -> schema]
                    - const - list or set (or iterable) of allowed values
+                   - enum - list/set/dict/tuple to check if obj __contains__ in "value"
   "any_key"     : need for obj type of dict - schema for all keys (ignores if value is set)
   "default"    : default value if this object does not exists (if callable will be called)
   "filter"     : function value -> bool - if false then raise error
@@ -64,6 +65,20 @@ returns parameterized decorator, that expects schema
 
 Validate only keyword args and ignores all positional 
 This decorator is the result of decorator_constructor
+
+
+##### pos_validator
+
+`def pos_validator(schema)`
+
+Validate only positional args and ignores all keywords 
+This decorator is the result of decorator_constructor
+
+
+##### args_validator
+`def args_validator(pos_schema: Dict[str, Any], kw_schema: Dict[str, Any]):`
+
+Validate both positional and keywords args
 
 
 ## Examples

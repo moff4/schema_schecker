@@ -5,5 +5,8 @@ python:
   - "3.7"
   - "3.8"
   # - "3.9"  # not yet supported by CI
-os: linux
+os:
+  - linux
+  - windows
+  - osx
 script: python -m unittest -v tests
