@@ -258,10 +258,10 @@ class TestJschema(unittest.TestCase):
             'value': {
                 '1': {
                     # type will be checked after pre_call and before post_call
-                    'pre_call': lambda x: int(x),
+                    'pre_call': int,
                     'type': int,
                     'filter': lambda x: x < 5,
-                    'post_call': lambda x: str(x),
+                    'post_call': str,
                 },
             }
         }
