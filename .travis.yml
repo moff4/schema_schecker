@@ -7,6 +7,6 @@ python:
   # - "3.9"  # not yet supported by CI
 os:
   - linux
-  - windows
+  # - windows  # not yet supported by CI
   - osx
 script: python -m unittest -v tests
