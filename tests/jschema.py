@@ -98,6 +98,32 @@ class TestJschema(unittest.TestCase):
             obj,
         )
 
+    def test_dict_comples(self):
+        obj = {
+            '1': 123,
+            '2': 42,
+        }
+        schema = {
+            type: dict,
+            'value': {
+                '2': int,
+                '3': {
+                    type: int,
+                    'default': 77,
+                }
+            },
+            'unexpected': True,
+        }
+        self.do_test(
+            obj=obj,
+            schema=schema,
+            result={
+                '1': 123,
+                '2': 42,
+                '3': 77,
+            }
+        )
+
     def test_dict_fail(self):
         obj = {}
         self.do_test(
@@ -401,7 +427,6 @@ class TestJschema(unittest.TestCase):
         self.do_test(obj, schema, obj)
         obj = '3'
         self.do_test(obj, schema, obj, False)
-
 
     def test_simple_enum_schema_fail(self):
         schema = {

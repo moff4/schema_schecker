@@ -30,50 +30,44 @@ def _validate_const_enum(obj: ObjType, schema: Dict[str, Any], schema_type: str,
     return obj
 
 
+def _validate_dicts_value(obj: ObjType, schema: Dict[str, Any], extra: str) -> ObjType:
+    new_obj = {}
+    unex = {i for i in obj if i not in schema['value']}
+    if unex and not schema.get('unexpected', False):
+        _on_error(schema, 'Got unexpected keys: "{}" {};'.format('", "'.join([str(i) for i in unex]), extra))
+    new_obj.update(
+        {
+            i: obj[i]
+            for i in unex
+        }
+    )
+    missed = {
+        i
+        for i in schema['value']
+        if i not in obj and (not isinstance(schema['value'][i], dict) or 'default' not in schema['value'][i])
+    }
+    if missed:
+        _on_error(schema, 'expected keys "{}" {}'.format('", "'.join([str(i) for i in missed]), extra))
+
+    try:
+        new_obj.update(
+            {
+                i: (
+                    _default(schema['value'][i]['default'])
+                    if i not in obj else
+                    _apply(obj=obj[i], schema=schema['value'][i], key=i)
+                )
+                for i in schema['value']
+            }
+        )
+    except ValueError as ex:
+        _on_error(schema, ex)
+    return new_obj
+
+
 def _validate_dict(obj: ObjType, schema: Dict[str, Any], extra: str) -> ObjType:
     if 'value' in schema:
-        new_obj = {}
-        unex = {i for i in obj if i not in schema['value']}
-        if unex:
-            if schema.get('unexpected', False):
-                new_obj.update(
-                    {
-                        i: obj[i]
-                        for i in unex
-                    }
-                )
-            else:
-                _on_error(schema,
-                          'Got unexpected keys: "{}" {};'.format(
-                              '", "'.join([str(i) for i in unex]),
-                              extra,
-                          ),
-                          )
-        missed = {
-            i
-            for i in schema['value']
-            if i not in obj and (not isinstance(schema['value'][i], dict) or 'default' not in schema['value'][i])
-        }
-        if missed:
-            _on_error(schema, 'expected keys "{}" {}'.format('", "'.join([str(i) for i in missed]), extra))
-
-        try:
-            new_obj.update(
-                {
-                    i:
-                        _default(schema['value'][i]['default'])
-                        if i not in obj else
-                        _apply(
-                            obj=obj[i],
-                            schema=schema['value'][i],
-                            key=i,
-                        )
-                    for i in schema['value']
-                }
-            )
-        except ValueError as ex:
-            _on_error(schema, ex)
-        obj = new_obj
+        obj = _validate_dicts_value(obj=obj, schema=schema, extra=extra)
     elif 'any_key' in schema:
         try:
             obj = {i: _apply(obj[i], schema['any_key'], i) for i in obj}
@@ -99,7 +93,10 @@ def _validate(obj: ObjType, schema: SchemaType, key: str, extra: str) -> ObjType
             _on_error(schema, '"{}" < min_length'.format(key))
 
         if issubclass(schema_type, (list, tuple)) and 'value' in schema:
-            obj = schema_type(_apply(i, schema['value'], key=key) for i in obj)
+            try:
+                obj = schema_type(_apply(i, schema['value'], key=key) for i in obj)
+            except ValueError as ex:
+                _on_error(schema, ex)
         elif issubclass(schema_type, dict):
             obj = _validate_dict(obj=obj, schema=schema, extra=extra)
     return obj
