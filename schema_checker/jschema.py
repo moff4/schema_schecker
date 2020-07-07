@@ -143,7 +143,7 @@ def validate(obj: ObjType, schema: SchemaType) -> ObjType:
           "value"      : need for obj type of
                            - list/tuple - is schema for all elements in list
                            - dict - dict[key -> schema]
-                           - const - list or set (or iterable) of allowed values
+                           - const - some value to be compared with using method
                            - enum - list/set/dict/tuple to check if obj __contains__ in "value"
           "any_key"     : need for obj type of dict - schema for all keys (ignores if value is set)
           "default"    : default value if this object does not exists (if callable will be called)

@@ -28,7 +28,7 @@ schema ::= dict - {
   "value"      : need for obj type of
                    - list - is schema for all elements in list
                    - dict - dict[key -> schema]
-                   - const - list or set (or iterable) of allowed values
+                   - const - some value to be compared with using method
                    - enum - list/set/dict/tuple to check if obj __contains__ in "value"
   "any_key"     : need for obj type of dict - schema for all keys (ignores if value is set)
   "default"    : default value if this object does not exists (if callable will be called)
@@ -87,6 +87,7 @@ Validate both positional and keywords args
 from datetime import datetime, timedelta
 from schema_checker import validate, kw_validator
 
+# validate that obj is str
 validate(
     obj='12345',
     schema={'type': str},
@@ -97,6 +98,7 @@ validate(
     schema={'type': str},
 )  # raise ValueError
 
+# check if value is int and less then 5
 validate(
     obj={'some_key': 10},
     schema={
@@ -111,6 +113,7 @@ validate(
 )  # raise ValueError 
 
 
+# convert obj to datetime and compare with today's date
 validate(
     obj='10.12.19',
     schema={
