@@ -24,17 +24,23 @@ schema - schema_checker
 schema ::= type of this object : list/dict/str/int/float (can be tuple of types) or "const"/"enum"
   OR
 schema ::= dict - {
-  type         : type of this object : "list/dict/str/int/float or "const"
+  type         : type of this object : "list/tuple/dict/str/int/float or "const"
   "value"      : need for obj type of
-                   - list - is schema for all elements in list
+                   - list/tuple - is schema for all elements in list
                    - dict - dict[key -> schema]
                    - const - some value to be compared with using method
                    - enum - list/set/dict/tuple to check if obj __contains__ in "value"
   "any_key"     : need for obj type of dict - schema for all keys (ignores if value is set)
   "default"    : default value if this object does not exists (if callable will be called)
-  "filter"     : function value -> bool - if false then raise error
-  "pre_call"   : function value -> value - will be called before cheking filter and value
-  "post_call"  : function value -> value - will be called after cheking filter and value
+  "filter"     : any of
+                   - Callable[value -> bool] - if false then raise error
+                   - Iterable[Callable[value -> bool]] - if any of them return false then raise error
+  "pre_call"   : any of
+                   - Callable[value -> value] - will be called before checking type and call filter's functions
+                   - Iterable[Callable[value -> value]] - will call all of them
+  "post_call"  : any of
+                   - Callable[value -> value] - will be called after checking type and call filter's functions
+                   - Iterable[Callable[value -> value]] - will call all of them
   "blank"      : raise error if value is blank
   "max_length" : extra check of length (len)
   "min_length" : extra check of length (len)

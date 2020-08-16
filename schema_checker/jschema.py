@@ -1,5 +1,5 @@
 
-from typing import Any, Dict, NoReturn, TypeVar, Union, Type, Tuple
+from typing import Any, Dict, NoReturn, TypeVar, Union, Type, Tuple, Callable, Iterable
 
 ObjType = TypeVar('ObjType')
 SchemaType = Union[str, Type, Tuple[Type], Dict[Union[str, Type], Any]]
@@ -76,10 +76,14 @@ def _validate_dict(obj: ObjType, schema: Dict[str, Any], extra: str) -> ObjType:
     return obj
 
 
+def _check_filter(obj: ObjType, func: Union[Callable, Iterable[Callable]]) -> bool:
+    return all(func(obj) for func in ([func] if callable(func) else func))
+
+
 def _generic_checks(obj: ObjType, schema: SchemaType, schema_type: Type, extra: str, key: str) -> ObjType:
     if not isinstance(obj, schema_type):
         _on_error(schema, 'expected type "{}" {} ; got {}'.format(schema_type, extra, type(obj)))
-    if 'filter' in schema and not schema['filter'](obj):
+    if 'filter' in schema and not _check_filter(obj, schema['filter']):
         _on_error(schema, '"{}" not passed filter'.format(key))
     if schema.get('blank') is False and not obj:
         _on_error(schema, '"{}" is blank'.format(key))
@@ -109,6 +113,12 @@ def _validate(obj: ObjType, schema: SchemaType, key: str, extra: str) -> ObjType
     return _validate_generic(obj=obj, schema=schema, schema_type=schema_type, extra=extra, key=key)
 
 
+def _apply_callable(obj: ObjType, func: Union[Callable, Iterable[Callable]]) -> ObjType:
+    for func in ([func] if callable(func) else func):
+        obj = func(obj)
+    return obj
+
+
 def _apply(obj: ObjType, schema: SchemaType, key: str) -> ObjType:
     extra = ''.join(['for ', key]) if key else ''
     if not isinstance(schema, (dict, type, tuple)) and schema not in {'const', 'enum'}:
@@ -123,12 +133,12 @@ def _apply(obj: ObjType, schema: SchemaType, key: str) -> ObjType:
         raise ValueError('"{}" is not type of "{}" {}'.format(obj, schema, extra))
 
     if 'pre_call' in schema:
-        obj = schema['pre_call'](obj)
+        obj = _apply_callable(obj, schema['pre_call'])
 
     obj = _validate(obj=obj, schema=schema, key=key, extra=extra)
 
     if 'post_call' in schema:
-        obj = schema['post_call'](obj)
+        obj = _apply_callable(obj, schema['post_call'])
     return obj
 
 
@@ -147,9 +157,15 @@ def validate(obj: ObjType, schema: SchemaType) -> ObjType:
                            - enum - list/set/dict/tuple to check if obj __contains__ in "value"
           "any_key"     : need for obj type of dict - schema for all keys (ignores if value is set)
           "default"    : default value if this object does not exists (if callable will be called)
-          "filter"     : function value -> bool - if false then raise error
-          "pre_call"   : function value -> value - will be called before cheking filter and value
-          "post_call"  : function value -> value - will be called after cheking filter and value
+          "filter"     : any of
+                           - Callable[value -> bool] - if false then raise error
+                           - Iterable[Callable[value -> bool]] - if any of them return false then raise error
+          "pre_call"   : any of
+                           - Callable[value -> value] - will be called before checking type and call filter's functions
+                           - Iterable[Callable[value -> value]] - will call all of them
+          "post_call"  : any of
+                           - Callable[value -> value] - will be called after checking type and call filter's functions
+                           - Iterable[Callable[value -> value]] - will call all of them
           "blank"      : raise error if value is blank
           "max_length" : extra check of length (len)
           "min_length" : extra check of length (len)
