@@ -96,12 +96,12 @@ def _generic_checks(obj: ObjType, schema: SchemaType, schema_type: Type, extra: 
 
 def _validate_generic(obj: ObjType, schema: SchemaType, schema_type: Type, key: str, extra: str) -> ObjType:
     obj = _generic_checks(obj=obj, schema=schema, schema_type=schema_type, key=key, extra=extra)
-    if issubclass(schema_type, (list, tuple)) and 'value' in schema:
+    if isinstance(schema_type, type) and issubclass(schema_type, (list, tuple)) and 'value' in schema:
         try:
             obj = schema_type(_apply(i, schema['value'], key=key) for i in obj)
         except ValueError as ex:
             _on_error(schema, ex)
-    elif issubclass(schema_type, dict):
+    elif isinstance(schema_type, type) and issubclass(schema_type, dict):
         obj = _validate_dict(obj=obj, schema=schema, extra=extra)
     return obj
 
